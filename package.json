@@ -1,0 +1,17 @@
+{
+  "name": "challenge-client",
+  "version": "1.0.0",
+  "description": "Validator challenge-response client: listens for Instruction transactions, verifies locally, submits Response transactions",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.0.0",
+    "xrpl": "^4.1.0"
+  }
+}
