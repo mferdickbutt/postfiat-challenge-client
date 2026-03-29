@@ -6,3 +6,4 @@ demo-flow-fixed.js
 dryrun-test.js
 full-flow-test.js
 test-flow.sh
+.env
