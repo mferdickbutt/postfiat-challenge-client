@@ -13,7 +13,7 @@ from datetime import datetime, timezone
 from typing import Dict, Iterable, List, Optional, Tuple
 
 
-SIMULATOR_VERSION = "byo-app-roundtrip-simulator/1.0.0"
+SIMULATOR_VERSION = "byo-app-roundtrip-simulator/1.0.1"
 CONTRACT_VERSION = "pf-byo-roundtrip-contract/2026-05-08"
 REFERENCE_TIME = "2026-05-08T00:00:00Z"
 STALE_AFTER_SECONDS = 24 * 60 * 60
@@ -22,9 +22,9 @@ LOW_CONFIDENCE_THRESHOLD = 0.50
 TRANSITION_ORDER = [
     "question_emitted",
     "duplicate_suppressed",
+    "privacy_blocked",
     "stale_input",
     "missing_source_metadata",
-    "privacy_blocked",
     "low_confidence_escalated",
 ]
 
@@ -155,6 +155,20 @@ FIXTURES = [
         "privacy_flags": [],
         "sanitized_observation": "Replay of the same peer defense challenge observation.",
     },
+    {
+        "case_id": "rt-010-stale-privacy-blocked",
+        "contract_version": CONTRACT_VERSION,
+        "idempotency_key": "app-iota:export-0700",
+        "observed_at": "2026-05-04T12:00:00Z",
+        "source": {
+            "app_id": "sanitized-archive-iota",
+            "source_kind": "external_community_app",
+            "export_id": "export-0700",
+        },
+        "confidence": 0.91,
+        "privacy_flags": ["direct_identifier"],
+        "sanitized_observation": "A stale archived observation still carries a privacy flag and must be blocked first.",
+    },
 ]
 
 
@@ -189,14 +203,14 @@ def transition_roundtrip(
     if idempotency_key in emitted_by_key:
         return "duplicate_suppressed", emitted_by_key[idempotency_key], "idempotency_key_already_emitted"
 
+    privacy_flags = fixture.get("privacy_flags", [])
+    if privacy_flags:
+        return "privacy_blocked", None, "privacy_flags_present"
+
     observed_at = parse_utc(str(fixture["observed_at"]))
     age_seconds = int((reference_time - observed_at).total_seconds())
     if age_seconds > STALE_AFTER_SECONDS:
         return "stale_input", None, "observation_older_than_contract_ttl"
-
-    privacy_flags = fixture.get("privacy_flags", [])
-    if privacy_flags:
-        return "privacy_blocked", None, "privacy_flags_present"
 
     confidence = float(fixture.get("confidence", 0.0))
     if confidence < LOW_CONFIDENCE_THRESHOLD:
